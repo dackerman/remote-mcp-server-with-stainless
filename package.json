@@ -21,6 +21,8 @@
 		"@modelcontextprotocol/sdk": "^1.11.1",
 		"agents": "^0.0.80",
 		"hono": "^4.7.9",
+		"todo-ninja": "link:/Users/dackerman/code/stainless/dist/interval/todo-ninja-typescript/dist",
+		"todo-ninja-mcp": "link:/Users/dackerman/code/stainless/dist/interval/todo-ninja-typescript/packages/mcp-server/dist",
 		"zod": "^3.24.4"
 	}
 }

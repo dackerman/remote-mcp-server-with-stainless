@@ -1,19 +1,24 @@
-# Remote MCP Server on Cloudflare
+# Remote MCP Server on Cloudflare with Stainless
 
-Let's get a remote MCP server up-and-running on Cloudflare Workers complete with OAuth login!
+This repo is a template for deploying your Stainless-generated MCP server remotely using Cloudflare workers.
+
+Remote MCP servers require OAuth, so this flow implements a local version of the OAuth redirects, but instead accepts the 
+API token and any other client configuration options that you'd need to instantiate your TypeScript client.
+
+## Usage
+The recommended way to use this project is to use the "deploy to cloudflare" button to use this repo as a template for generating a server.
 
 ## Develop locally
 
 ```bash
-# clone the repository
-git clone git@github.com:cloudflare/ai.git
-
 # install dependencies
-cd ai
 npm install
 
+# installs the stainless-generated mcp package deployed on npm as my-org-mcp
+./scripts/install-mcp-server my-org-mcp
+
 # run locally
-npx nx dev remote-mcp-server
+npm run dev
 ```
 
 You should be able to open [`http://localhost:8787/`](http://localhost:8787/) in your browser
@@ -26,14 +31,6 @@ To explore your new MCP api, you can use the [MCP Inspector](https://modelcontex
 - [Within the inspector](http://localhost:5173), switch the Transport Type to `SSE` and enter `http://localhost:8787/sse` as the URL of the MCP server to connect to, and click "Connect"
 - You will navigate to a (mock) user/password login screen. Input any email and pass to login.
 - You should be redirected back to the MCP Inspector and you can now list and call any defined tools!
-
-<div align="center">
-  <img src="img/mcp-inspector-sse-config.png" alt="MCP Inspector with the above config" width="600"/>
-</div>
-
-<div align="center">
-  <img src="img/mcp-inspector-successful-tool-call.png" alt="MCP Inspector with after a tool call" width="600"/>
-</div>
 
 ## Connect Claude Desktop to your local MCP server
 

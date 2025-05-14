@@ -5,10 +5,10 @@ import {
 	parseApproveFormBody,
 	renderAuthorizationRejectedContent,
 	renderAuthorizationApprovedContent,
-	renderLoggedInAuthorizeScreen,
 	renderLoggedOutAuthorizeScreen,
 } from "./utils";
 import type { OAuthHelpers } from "@cloudflare/workers-oauth-provider";
+import { serverConfig } from "todo-ninja-mcp/server";
 
 export type Bindings = Env & {
 	OAUTH_PROVIDER: OAuthHelpers;
@@ -18,47 +18,37 @@ const app = new Hono<{
 	Bindings: Bindings;
 }>();
 
+
+const config = serverConfig;
+
 // Render a basic homepage placeholder to make sure the app is up
 app.get("/", async (c) => {
 	const content = await homeContent(c.req.raw);
-	return c.html(layout(content, "MCP Remote Auth Demo - Home"));
+	return c.html(layout(content, "Home", config));
+});
+
+app.get("/demo", async (c) => {
+	const content = await renderLoggedOutAuthorizeScreen(config, {} as any);
+	return c.html(layout(content, "Authorization", config));
 });
 
 // Render an authorization page
 // If the user is logged in, we'll show a form to approve the appropriate scopes
 // If the user is not logged in, we'll show a form to both login and approve the scopes
 app.get("/authorize", async (c) => {
-	// We don't have an actual auth system, so to demonstrate both paths, you can
-	// hard-code whether the user is logged in or not. We'll default to true
-	// const isLoggedIn = false;
-	const isLoggedIn = true;
-
 	const oauthReqInfo = await c.env.OAUTH_PROVIDER.parseAuthRequest(c.req.raw);
 
-	const oauthScopes = [
-		{
-			name: "read_profile",
-			description: "Read your basic profile information",
-		},
-		{ name: "read_data", description: "Access your stored data" },
-		{ name: "write_data", description: "Create and modify your data" },
-	];
-
-	if (isLoggedIn) {
-		const content = await renderLoggedInAuthorizeScreen(oauthScopes, oauthReqInfo);
-		return c.html(layout(content, "MCP Remote Auth Demo - Authorization"));
-	}
-
-	const content = await renderLoggedOutAuthorizeScreen(oauthScopes, oauthReqInfo);
-	return c.html(layout(content, "MCP Remote Auth Demo - Authorization"));
+	const content = await renderLoggedOutAuthorizeScreen(config, oauthReqInfo);
+	return c.html(layout(content, "Authorization", config));
 });
 
 // The /authorize page has a form that will POST to /approve
 // This endpoint is responsible for validating any login information and
 // then completing the authorization request with the OAUTH_PROVIDER
 app.post("/approve", async (c) => {
-	const { action, oauthReqInfo, email, password } = await parseApproveFormBody(
+	const { action, oauthReqInfo, clientProps } = await parseApproveFormBody(
 		await c.req.parseBody(),
+		config,
 	);
 
 	if (!oauthReqInfo) {
@@ -76,30 +66,32 @@ app.post("/approve", async (c) => {
 			return c.html(
 				layout(
 					await renderAuthorizationRejectedContent("/"),
-					"MCP Remote Auth Demo - Authorization Status",
+					"Authorization Status",
+					config,
 				),
 			);
 		}
 	}
 
-	// The user must be successfully logged in and have approved the scopes, so we
-	// can complete the authorization request
+	// Generate a random user ID for this demo
+	const generatedUserId = Math.random().toString(36).substring(2);
+
 	const { redirectTo } = await c.env.OAUTH_PROVIDER.completeAuthorization({
 		request: oauthReqInfo,
-		userId: email,
+		userId: generatedUserId,
 		metadata: {
-			label: "Test User",
 		},
 		scope: oauthReqInfo.scope,
 		props: {
-			userEmail: email,
+			clientProps,
 		},
 	});
 
 	return c.html(
 		layout(
 			await renderAuthorizationApprovedContent(redirectTo),
-			"MCP Remote Auth Demo - Authorization Status",
+			"Authorization Status",
+			config,
 		),
 	);
 });
